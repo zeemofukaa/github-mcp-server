@@ -1,3 +1,5 @@
+# Testing git status
+
 from github_tools import (
     clone_repo,
     list_files,
@@ -10,6 +12,9 @@ from github_tools import (
 from git_tools import (
     repository_status,
     changed_files,
+    git_diff,
+    commit_changes,
+    push_changes,
 )
 
 from dependency_graph import build_dependency_graph
@@ -135,6 +140,30 @@ def list_changed_files(repo_url: str) -> str:
         return "No modified files."
 
     return "\n".join(files)
+
+@mcp.tool()
+def show_diff(repo_path: str) -> str:
+    """
+    Show the current Git diff.
+    """
+
+    return git_diff(repo_path)
+
+@mcp.tool()
+def commit_repository(repo_path: str, message: str) -> str:
+    """
+    Commit all staged and unstaged changes.
+    """
+
+    return commit_changes(repo_path, message)
+
+@mcp.tool()
+def push_repository(repo_path: str) -> str:
+    """
+    Push commits to origin.
+    """
+
+    return push_changes(repo_path)
 
 if __name__ == "__main__":
     mcp.run()

@@ -57,3 +57,26 @@ def changed_files(repo_path):
     changed.extend(repo.untracked_files)
 
     return sorted(set(changed))
+
+def git_diff(repo_path):
+    repo = Repo(repo_path)
+
+    if not repo.is_dirty(untracked_files=True):
+        return "No changes."
+
+    return repo.git.diff()
+
+def commit_changes(repo_path, message):
+    repo = Repo(repo_path)
+
+    repo.git.add(A=True)
+    commit = repo.index.commit(message)
+
+    return f"Committed {commit.hexsha[:7]}"
+
+def push_changes(repo_path):
+    repo = Repo(repo_path)
+
+    repo.remotes.origin.push()
+
+    return "Push successful."
