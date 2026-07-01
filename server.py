@@ -1,5 +1,5 @@
 from gemini_client import ask_gemini
-# Auto mode test
+# test?
 from github_tools import (
     clone_repo,
     list_files,
