@@ -1,3 +1,10 @@
+IGNORE_DIRS = {
+    ".git",
+    "venv",
+    "__pycache__",
+    "node_modules",
+}
+
 from pathlib import Path
 from git import Repo
 
@@ -27,6 +34,8 @@ def list_files(repo_path: Path):
     files = []
 
     for file in repo_path.rglob("*"):
+        if any(part in IGNORE_DIRS for part in file.parts):
+            continue
         if file.is_file():
             try:
                 relative = file.relative_to(repo_path)
@@ -45,7 +54,8 @@ def detect_languages(repo_path: Path):
     languages = {}
 
     for file in repo_path.rglob("*"):
-
+        if any(part in IGNORE_DIRS for part in file.parts):
+            continue
         if file.is_file():
 
             ext = file.suffix.lower()
@@ -79,7 +89,8 @@ def find_file(repo_path, filename):
     matches = []
 
     for file in repo_path.rglob("*"):
-
+        if any(part in IGNORE_DIRS for part in file.parts):
+            continue
         if file.is_file():
 
             if file.name.lower() == filename.lower():
@@ -93,6 +104,8 @@ def search_code(repo_path, keyword):
     matches = []
 
     for file in repo_path.rglob("*"):
+        if any(part in IGNORE_DIRS for part in file.parts):
+            continue
 
         if not file.is_file():
             continue

@@ -22,6 +22,7 @@ from watcher import (
     get_watched_repo,
     get_watch_mode,
     check_changes,
+    stop_watching,
 )
 
 from dependency_graph import build_dependency_graph
@@ -173,7 +174,7 @@ def push_repository(repo_path: str) -> str:
     return push_changes(repo_path)
 
 @mcp.tool()
-def watch_repo(repo_path: str, mode: str = "review") -> str:
+def watch_repo(repo_path: str, mode: str = "review",  interval: int = 10) -> str:
     """
     Watch a repository.
 
@@ -183,7 +184,7 @@ def watch_repo(repo_path: str, mode: str = "review") -> str:
     notify
     """
 
-    return watch_repository(repo_path, mode)
+    return watch_repository(repo_path, mode, interval)
 
 @mcp.tool()
 def check_repository() -> str:
@@ -279,6 +280,10 @@ def watcher_status() -> str:
         f"{repo}\n\n"
         f"Mode: {get_watch_mode()}"
     )
+    
+@mcp.tool()
+def stop_repository_watch() -> str:
+    return stop_watching()
 
 if __name__ == "__main__":
     mcp.run()

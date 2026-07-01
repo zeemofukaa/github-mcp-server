@@ -13,14 +13,18 @@ from gemini_client import ask_gemini
 
 WATCHED_REPO = None
 WATCH_MODE = "review"
+WATCH_INTERVAL = 10
 
 watching = False
 
 
-def watch_repository(repo_path, mode="review"):
+def watch_repository(repo_path, mode="review", interval=10):
     global WATCHED_REPO
     global WATCH_MODE
     global watching
+    global WATCH_INTERVAL
+
+    WATCH_INTERVAL = interval
 
     WATCHED_REPO = Path(repo_path)
     WATCH_MODE = mode
@@ -70,14 +74,23 @@ def watch_loop():
 
             process_changes(repo)
 
-        time.sleep(10)
+        time.sleep(WATCH_INTERVAL)
+        
+LAST_DIFF = ""
         
 def process_changes(repo):
+
+    global LAST_DIFF
 
     diff = git_diff(repo)
 
     if diff == "No changes.":
         return
+
+    if diff == LAST_DIFF:
+        return
+
+    LAST_DIFF = diff
 
     prompt = f"""
 Return ONLY a git commit message.
@@ -98,3 +111,11 @@ Git diff:
 
     if get_watch_mode() == "auto":
         push_changes(repo)
+        
+def stop_watching():
+
+    global watching
+
+    watching = False
+
+    return "Watcher stopped."
