@@ -1,5 +1,5 @@
-# Testing git status
-
+from gemini_client import ask_gemini
+# Auto mode test
 from github_tools import (
     clone_repo,
     list_files,
@@ -15,6 +15,13 @@ from git_tools import (
     git_diff,
     commit_changes,
     push_changes,
+)
+
+from watcher import (
+    watch_repository,
+    get_watched_repo,
+    get_watch_mode,
+    check_changes,
 )
 
 from dependency_graph import build_dependency_graph
@@ -164,6 +171,100 @@ def push_repository(repo_path: str) -> str:
     """
 
     return push_changes(repo_path)
+
+@mcp.tool()
+def watch_repo(repo_path: str, mode: str = "review") -> str:
+    """
+    Watch a repository.
+
+    Modes:
+    review
+    auto
+    notify
+    """
+
+    return watch_repository(repo_path, mode)
+
+@mcp.tool()
+def check_repository() -> str:
+
+    repo, files = check_changes()
+
+    if repo is None:
+        return "No repository is being watched."
+
+    if not files:
+        return "No changes detected."
+
+    return (
+        "Changed files:\n\n"
+        + "\n".join(files)
+    )
+    
+@mcp.tool()
+def review_changes() -> str:
+
+    repo = get_watched_repo()
+
+    if repo is None:
+        return "No watched repository."
+
+    diff = git_diff(repo)
+
+    if diff == "No changes.":
+        return diff
+
+    prompt = f"""
+Review this git diff.
+
+Return:
+
+1. Summary
+
+2. Suggested commit message
+
+Git diff:
+
+{diff}
+"""
+
+    return ask_gemini(prompt)
+
+@mcp.tool()
+def auto_commit() -> str:
+
+    repo = get_watched_repo()
+
+    if repo is None:
+        return "No watched repository."
+
+    diff = git_diff(repo)
+
+    if diff == "No changes.":
+        return diff
+
+    prompt = f"""
+Generate ONLY a git commit message.
+
+Git diff:
+
+{diff}
+"""
+
+    message = ask_gemini(prompt).strip()
+
+    if message.startswith("[ERROR]"):
+        return message
+
+    result = commit_changes(repo, message)
+
+    if get_watch_mode() == "auto":
+        result += "\n" + push_changes(repo)
+
+    elif get_watch_mode() == "review":
+        result += "\nWaiting for push confirmation."
+
+    return result
 
 if __name__ == "__main__":
     mcp.run()
