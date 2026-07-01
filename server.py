@@ -1,10 +1,19 @@
-from mcp.server.fastmcp import FastMCP
-
 from github_tools import (
     clone_repo,
+    list_files,
     read_file,
     find_file,
+    search_code,
+    detect_languages,
 )
+
+from git_tools import (
+    repository_status,
+    changed_files,
+)
+
+from dependency_graph import build_dependency_graph
+from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("GitHub MCP Server")
 
@@ -18,15 +27,26 @@ def clone_repository(repo_url: str) -> str:
     repo = clone_repo(repo_url)
 
     return f"Repository cloned to {repo}"
-
-
-if __name__ == "__main__":
-    mcp.run()
     
 @mcp.tool()
-def explain_file(repo_url: str, filename: str) -> str:
+def list_repository_files(repo_url: str) -> str:
     """
-    Read a source file from a GitHub repository.
+    List every source file inside a GitHub repository.
+    """
+
+    repo = clone_repo(repo_url)
+
+    files = list_files(repo)
+
+    if not files:
+        return "Repository contains no files."
+
+    return "\n".join(files)
+    
+@mcp.tool()
+def read_repository_file(repo_url: str, filename: str) -> str:
+    """
+    Read a file from a GitHub repository.
     """
 
     repo = clone_repo(repo_url)
@@ -42,6 +62,79 @@ def explain_file(repo_url: str, filename: str) -> str:
             + "\n".join(str(m.relative_to(repo)) for m in matches)
         )
 
-    code = read_file(repo, str(matches[0].relative_to(repo)))
+    return read_file(
+        repo,
+        str(matches[0].relative_to(repo))
+    )
+    
+@mcp.tool()
+def find_symbol(repo_url: str, symbol: str) -> str:
+    """
+    Find where a class, function or variable is used.
+    """
 
-    return code
+    repo = clone_repo(repo_url)
+
+    results = search_code(repo, symbol)
+
+    if not results:
+        return f"No occurrences of '{symbol}' found."
+
+    output = []
+
+    for result in results:
+
+        output.append(
+            f"FILE: {result['path']}\n\n"
+            f"{result['content'][:1000]}"
+        )
+
+    return "\n\n------------------------\n\n".join(output)
+
+@mcp.tool()
+def repository_languages(repo_url: str) -> str:
+    """
+    Detect the programming languages used in a repository.
+    """
+
+    repo = clone_repo(repo_url)
+
+    languages = detect_languages(repo)
+
+    return "\n".join(
+        f"{k}: {v}"
+        for k, v in languages.items()
+    )
+    
+@mcp.tool()
+def project_architecture(repo_url: str) -> str:
+    """
+    Generate the dependency graph of a Python project.
+    """
+
+    repo = clone_repo(repo_url)
+
+    return build_dependency_graph(repo)
+
+@mcp.tool()
+def git_status(repo_url: str) -> str:
+    repo = clone_repo(repo_url)
+    return f"Repository path: {repo}\n\n{repository_status(repo)}"
+
+@mcp.tool()
+def list_changed_files(repo_url: str) -> str:
+    """
+    List all changed files in a repository.
+    """
+
+    repo = clone_repo(repo_url)
+
+    files = changed_files(repo)
+
+    if not files:
+        return "No modified files."
+
+    return "\n".join(files)
+
+if __name__ == "__main__":
+    mcp.run()
