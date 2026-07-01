@@ -266,5 +266,19 @@ Git diff:
 
     return result
 
+@mcp.tool()
+def watcher_status() -> str:
+
+    repo = get_watched_repo()
+
+    if repo is None:
+        return "No repository being watched."
+
+    return (
+        f"Watching:\n"
+        f"{repo}\n\n"
+        f"Mode: {get_watch_mode()}"
+    )
+
 if __name__ == "__main__":
     mcp.run()
